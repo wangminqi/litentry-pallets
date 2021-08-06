@@ -7,6 +7,102 @@ use frame_system::Event as SystemEvent;
 use pallet_balances::Event as BalanceEvent;
 use sp_runtime::AccountId32;
 
+
+fn initial_account() -> (AccountId32, AccountId32) {
+	let alice_account: AccountId32 = AccountId32::from([
+		0xd4, 0x35, 0x93, 0xc7, 0x15, 0xfd, 0xd3, 0x1c, 0x61, 0x14, 0x1a, 0xbd, 0x04, 0xa9,
+		0x9f, 0xd6, 0x82, 0x2c, 0x85, 0x58, 0x85, 0x4c, 0xcd, 0xe3, 0x9a, 0x56, 0x84, 0xe7,
+		0xa5, 0x6d, 0xa2, 0x7d,
+	]);
+
+	let bob_account: AccountId32 = AccountId32::from([
+		0x51u8, 0x82u8, 0xa7u8, 0x3eu8, 0x48u8, 0xbdu8, 0x6eu8, 0x81u8, 0x4du8, 0x0cu8, 0x2bu8,
+		0x41u8, 0x67u8, 0x2du8, 0x9cu8, 0xb8u8, 0xc8u8, 0x7cu8, 0x42u8, 0x21u8, 0xb5u8, 0x5bu8,
+		0xc0u8, 0x8eu8, 0x09u8, 0x43u8, 0x19u8, 0x8eu8, 0x90u8, 0xcau8, 0xadu8, 0x1fu8,
+	]);
+	
+	let start_wealth: u64 = (5 * CREATION_FEE + 10).into();
+	let _ = Balances::deposit_creating(&alice_account, start_wealth);
+	let _ = Balances::deposit_creating(&bob_account, start_wealth);
+
+	run_to_block(1);
+
+	assert_eq!(
+		events(),
+		[
+			SystemEvent::NewAccount(alice_account.clone()).into(),	
+			BalanceEvent::Endowed(alice_account.clone(), start_wealth).into(),
+			SystemEvent::NewAccount(bob_account.clone()).into(),	
+			BalanceEvent::Endowed(bob_account.clone(), start_wealth).into(),
+		]
+	);
+
+	let _ = Balances::deposit_creating(&Pot::get(), 1);
+
+	assert_eq!(
+		events(),
+		[
+			SystemEvent::NewAccount(Pot::get()).into(),
+			BalanceEvent::Endowed(Pot::get(), CREATION_FEE.into()).into(),
+		]
+	);
+
+    return (alice_account, bob_account);
+}
+
+
+fn create_class_simple_nft_token(account:AccountId32, properties:Properties, start_block:Option<u32>, end_block:Option<u32>){
+	events();
+	assert_ok!(Nft::create_class(
+		Origin::signed(account.clone()),
+		CID::default(),
+		properties,
+		start_block,
+		end_block,
+		ClassType::Simple(10),
+	));
+	assert_eq!(
+		events(),
+		[
+			SystemEvent::NewAccount(Pot::get()).into(),
+			BalanceEvent::Endowed(Pot::get(), CREATION_FEE.into()).into(),
+		]
+	);
+}
+
+
+fn mint_simple_nft_token(account:AccountId32, properties:Properties, start_block:Option<u32>, end_block:Option<u32>){
+	events();
+	assert_ok!(Nft::create_class(
+		Origin::signed(account.clone()),
+		CID::default(),
+		properties,
+		start_block,
+		end_block,
+		ClassType::Simple(10),
+	));
+	assert_eq!(
+		events(),
+		[
+			SystemEvent::NewAccount(Pot::get()).into(),
+			BalanceEvent::Endowed(Pot::get(), CREATION_FEE.into()).into(),
+		]
+	);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[test]
 fn test_simple_type() {
 	new_test_ext().execute_with(|| {
